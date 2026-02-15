@@ -1,0 +1,90 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isUserWithRole(role) {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+    
+    function isAdmin() {
+      return isUserWithRole('admin');
+    }
+
+    // Rules for the 'users' collection
+    match /users/{userId} {
+      allow create: if isSignedIn() && isOwner(userId);
+      // Allow anyone to read a user's profile, but only the owner can update it.
+      allow read: if true;
+      allow update: if isSignedIn() && isOwner(userId);
+      allow list: if isSignedIn();
+      // Only an admin can delete a user
+      allow delete: if isAdmin();
+    }
+    
+    // Rules for the 'hostels' collection
+    match /hostels/{hostelId} {
+      // Allow public read access for all hostels.
+      allow get: if true;
+      
+      // Allow anyone to list hostels.
+      allow list: if true;
+
+      // Allow users with the 'owner' role to create hostels.
+      allow create: if isSignedIn() && isUserWithRole('owner') && request.resource.data.ownerId == request.auth.uid;
+
+      allow update: if isSignedIn() && (isAdmin() || isOwner(resource.data.ownerId));
+      
+      allow delete: if (isSignedIn() && request.auth.uid == resource.data.ownerId) || isAdmin();
+    }
+    
+    // Rules for the 'inquiries' collection
+    match /inquiries/{inquiryId} {
+      // Allow authenticated users to create inquiries for themselves
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      
+      // Allow owner/admin to read inquiries for their hostels, allow student to read their own
+      allow list, read: if isSignedIn() && (isUserWithRole('owner') || isAdmin() || request.auth.uid == resource.data.userId);
+      
+      // Allow owner to add/update a quotation.
+      // Allow student to update the quotation status ONLY to 'paid' and add platformFee.
+      allow update: 
+        if (isSignedIn() && request.auth.uid == resource.data.ownerId) ||
+           (isSignedIn() && request.auth.uid == resource.data.userId &&
+            request.resource.data.quotation.status == 'paid' &&
+            resource.data.quotation.status == 'pending' &&
+            'platformFee' in request.resource.data.quotation);
+
+      // For simplicity in this version, not allowing delete.
+      allow delete: if isAdmin();
+    }
+
+    // Rules for the 'chats' collection
+    match /chats/{chatId} {
+      // Allow any signed-in user to create, read, update, or list chats.
+      allow read, update, create, list: if isSignedIn();
+      
+      // Do not allow chats to be deleted for now.
+      allow delete: if false;
+
+      // Rules for the 'messages' subcollection
+      match /messages/{messageId} {
+        // Allow any signed-in user to read or create messages.
+        allow list, read, create: if isSignedIn();
+        
+        // Messages are immutable.
+        allow update, delete: if false;
+      }
+    }
+  }
+}

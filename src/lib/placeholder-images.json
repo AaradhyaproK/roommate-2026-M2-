@@ -1,0 +1,52 @@
+{
+  "placeholderImages": [
+    {
+      "id": "hero",
+      "description": "A group of young people laughing in a modern, bright common room of a hostel.",
+      "imageUrl": "https://images.unsplash.com/photo-1664908725508-3e46b90886b1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxob3N0ZWwlMjBjb21tb24lMjBhcmVhfGVufDB8fHx8MTc2Mzc0OTk5MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "hostel common area"
+    },
+    {
+      "id": "hostel-1",
+      "description": "Exterior of a modern hostel with a welcoming entrance.",
+      "imageUrl": "https://images.unsplash.com/photo-1695664488281-d7166250482d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxob3N0ZWwlMjBleHRlcmlvcnxlbnwwfHx8fDE3NjM4MjU1OTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "hostel exterior"
+    },
+    {
+      "id": "hostel-2",
+      "description": "A clean and tidy dorm room with bunk beds.",
+      "imageUrl": "https://images.unsplash.com/photo-1549675584-4d159a8fb92d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxkb3JtJTIwcm9vbXxlbnwwfHx8fDE3NjM4MjU1OTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "dorm room"
+    },
+    {
+      "id": "hostel-3",
+      "description": "A hostel kitchen area with people cooking and socializing.",
+      "imageUrl": "https://images.unsplash.com/photo-1571866735550-7b1ae3bdb144?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxob3N0ZWwlMjBraXRjaGVufGVufDB8fHx8MTc2MzgyNTU5NXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "hostel kitchen"
+    },
+    {
+      "id": "hostel-4",
+      "description": "Rooftop terrace of a hostel with a city view.",
+      "imageUrl": "https://images.unsplash.com/photo-1604064536391-074dc000c776?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxyb29mdG9wJTIwdGVycmFjZXxlbnwwfHx8fDE3NjM3MzQxNjJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "rooftop terrace"
+    },
+    {
+      "id": "hostel-5",
+      "description": "A stylish private room in a hostel.",
+      "imageUrl": "https://images.unsplash.com/photo-1628870970123-68cfb9889a74?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cHJpdmF0ZSUyMHJvb218ZW58MHx8fHwxNzYzODI1NTk1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "private room"
+    },
+    {
+      "id": "hostel-6",
+      "description": "A cozy reading nook in a hostel common area.",
+      "imageUrl": "https://images.unsplash.com/photo-1495640452828-3df6795cf69b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxyZWFkaW5nJTIwbm9va3xlbnwwfHx8fDE3NjM3OTE2MzZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "reading nook"
+    },
+    {
+      "id": "profile-placeholder",
+      "description": "A generic avatar placeholder for user profiles.",
+      "imageUrl": "https://images.unsplash.com/photo-1599566147214-ce487862ea4f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxwZXJzb24lMjBhdmF0YXJ8ZW58MHx8fHwxNzYzNzU0MjM0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person avatar"
+    }
+  ]
+}
