@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import React from 'react';
+import { ForgotPasswordDialog } from '@/components/auth/ForgotPasswordDialog';
 
 const loginFormSchema = z.object({
   email: z.string().email(),
@@ -90,7 +91,9 @@ export default function LoginPage() {
                   name="password"
                   render={({ field }) => (
                     <FormItem className="grid gap-2">
-                      <Label htmlFor="password">Password</Label>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="password">Password</Label>
+                      </div>
                       <FormControl>
                         <Input id="password" type="password" {...field} />
                       </FormControl>
@@ -103,6 +106,7 @@ export default function LoginPage() {
                   Login
                 </Button>
               </form>
+              
             </Form>
           </CardContent>
           <div className="mt-4 p-6 pt-0 text-center text-sm">
@@ -110,6 +114,9 @@ export default function LoginPage() {
             <Link href="/signup" className="underline text-primary">
               Sign up
             </Link>
+            <br />
+             <ForgotPasswordDialog />
+
           </div>
         </Card>
       </main>

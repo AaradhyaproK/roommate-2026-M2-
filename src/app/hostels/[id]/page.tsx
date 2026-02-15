@@ -1,8 +1,8 @@
 
 'use client';
 import Image from 'next/image';
-import { notFound, useParams } from 'next/navigation';
-import { MapPin, IndianRupee, BedDouble, Star, Users, Clock, Home, ExternalLink, Info, ClipboardList } from 'lucide-react';
+import { notFound, useParams, useRouter } from 'next/navigation';
+import { MapPin, IndianRupee, BedDouble, Star, Users, Clock, Home, ExternalLink, Info, ClipboardList, ArrowLeft } from 'lucide-react';
 import React from 'react';
 
 import { Header } from '@/components/layout/Header';
@@ -16,6 +16,8 @@ import { BookingInquiryDialog } from '@/components/hostels/BookingInquiryDialog'
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -27,6 +29,7 @@ function LoadingSkeleton() {
         <Header />
         <main className="flex-1">
             <div className="container mx-auto max-w-5xl py-12 px-4 md:px-6 space-y-8">
+                 <Skeleton className="h-9 w-24 rounded-md" />
                  <div className="flex flex-col md:flex-row gap-8">
                     <Skeleton className="h-40 w-40 rounded-full"/>
                     <div className="space-y-4 flex-1">
@@ -55,6 +58,7 @@ function LoadingSkeleton() {
 
 export default function HostelDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const { data: hostel, loading } = useDoc<Hostel>(`hostels/${params.id}`);
   const [selectedImg, setSelectedImg] = React.useState<string | null>(null);
 
@@ -74,6 +78,15 @@ export default function HostelDetailPage() {
       <main className="flex-1 bg-secondary/30">
         <div className="container mx-auto max-w-5xl py-8 md:py-12 px-4 md:px-6 space-y-8">
           
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="group -ml-2 text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" /> Back
+          </Button>
+
           {/* Header Section */}
           <header className="flex flex-col md:flex-row gap-8 items-center">
             <div className="relative h-32 w-32 md:h-40 md:w-40 flex-shrink-0">
@@ -180,6 +193,9 @@ export default function HostelDetailPage() {
 
          <Dialog open={!!selectedImg} onOpenChange={(isOpen) => !isOpen && setSelectedImg(null)}>
             <DialogContent className="max-w-4xl h-[80vh] p-0 border-0 bg-transparent">
+                <DialogHeader className="sr-only">
+                    <DialogTitle>Hostel Image Preview</DialogTitle>
+                </DialogHeader>
                 {selectedImg && (
                     <Image
                         src={selectedImg}
