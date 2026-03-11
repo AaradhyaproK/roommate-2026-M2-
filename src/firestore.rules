@@ -21,12 +21,16 @@ service cloud.firestore {
       return isUserWithRole('admin');
     }
 
+    function isVerifiedOwner() {
+      return isUserWithRole('owner') && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.verificationStatus == 'approved';
+    }
+
     // Rules for the 'users' collection
     match /users/{userId} {
-      allow create: if isSignedIn() && isOwner(userId);
+      allow create: if (isSignedIn() && isOwner(userId)) || isAdmin();
       // Allow anyone to read a user's profile, but only the owner can update it.
       allow read: if true;
-      allow update: if isSignedIn() && isOwner(userId);
+      allow update: if (isSignedIn() && isOwner(userId)) || isAdmin();
       allow list: if isSignedIn();
       // Only an admin can delete a user
       allow delete: if isAdmin();
@@ -41,7 +45,7 @@ service cloud.firestore {
       allow list: if true;
 
       // Allow users with the 'owner' role to create hostels.
-      allow create: if isSignedIn() && isUserWithRole('owner') && request.resource.data.ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isVerifiedOwner() && request.resource.data.ownerId == request.auth.uid;
 
       allow update: if isSignedIn() && (isAdmin() || isOwner(resource.data.ownerId));
       
@@ -85,6 +89,16 @@ service cloud.firestore {
         // Messages are immutable.
         allow update, delete: if false;
       }
+    }
+
+    // Rules for 'owner-requests' collection
+    match /owner-requests/{requestId} {
+      // Anyone can create a request to become an owner.
+      // The request must be in 'pending' state upon creation.
+      allow create: if request.resource.data.status == 'pending';
+
+      // Only admins can read, update, or delete owner requests.
+      allow read, update, delete, list: if isAdmin();
     }
   }
 }

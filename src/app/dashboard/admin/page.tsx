@@ -19,6 +19,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -27,6 +34,27 @@ import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+function DocumentViewerDialog({ docUrl, triggerText }: { docUrl: string; triggerText: string }) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="link" className="p-0 h-auto font-normal">
+          {triggerText}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>{triggerText}</DialogTitle>
+        </DialogHeader>
+        <div className="mt-4 -mx-6 -mb-6">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={docUrl} alt={triggerText} className="w-full h-auto rounded-b-lg" />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function DeleteUserDialog({ userId }: { userId: string }) {
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -153,8 +181,9 @@ export default function AdminPage() {
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>Role / Status</TableHead>
+                    <TableHead>Documents</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -174,8 +203,38 @@ export default function AdminPage() {
                         <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'} className="capitalize">
                           {user.role}
                         </Badge>
+                        {user.role === 'owner' && (
+                          <Badge
+                            variant={
+                              user.verificationStatus === 'approved'
+                                ? 'default'
+                                : user.verificationStatus === 'pending'
+                                ? 'outline'
+                                : 'secondary'
+                            }
+                            className="capitalize ml-2"
+                          >
+                            {user.verificationStatus || 'unverified'}
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>
+                        {user.role === 'student' && user.aadharUrl ? (
+                          <DocumentViewerDialog docUrl={user.aadharUrl} triggerText="View Aadhar" />
+                        ) : user.role === 'owner' && (user.aadharProofUrl || user.residentProofUrl) ? (
+                          <div className="flex flex-col gap-1 items-start">
+                            {user.aadharProofUrl && (
+                              <DocumentViewerDialog docUrl={user.aadharProofUrl} triggerText="View Aadhar" />
+                            )}
+                            {user.residentProofUrl && (
+                              <DocumentViewerDialog docUrl={user.residentProofUrl} triggerText="View Residence Proof" />
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">No documents</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
                           {/* Prevent admin from deleting themselves */}
                           {profile && profile.id !== user.id && (
                               <DeleteUserDialog userId={user.id} />

@@ -14,7 +14,7 @@ import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useAuth, useFirestore } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { collection, doc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
@@ -22,14 +22,15 @@ import React from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
-const signupFormSchema = z.object({
-  name: z.string().min(2, 'Name is too short.'),
-  email: z.string().email(),
-  password: z.string().min(6, 'Password must be at least 6 characters.'),
-  role: z.enum(['student', 'owner'], {
-    required_error: 'You need to select a role.',
-  }),
-});
+const signupFormSchema = z
+  .object({
+    name: z.string().min(2, 'Name is too short.'),
+    email: z.string().email(),
+    password: z.string().min(6, 'Password must be at least 6 characters.'),
+    role: z.enum(['student', 'owner'], {
+      required_error: 'You need to select a role.',
+    }),
+  });
 
 type SignupFormValues = z.infer<typeof signupFormSchema>;
 
@@ -42,13 +43,9 @@ export default function SignupPage() {
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupFormSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      password: '',
-      role: undefined,
-    },
   });
+
+  const role = form.watch('role');
 
   const onSubmit = async (data: SignupFormValues) => {
     if (!auth || !firestore) return;
@@ -57,7 +54,7 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const user = userCredential.user;
 
-      const userProfile = {
+      const userProfile: any = {
         id: user.uid,
         name: data.name,
         email: data.email,
@@ -65,33 +62,35 @@ export default function SignupPage() {
         createdAt: new Date().toISOString(),
       };
 
-      const userDocRef = doc(firestore, 'users', user.uid);
-      
-      setDoc(userDocRef, userProfile)
-        .catch((serverError) => {
-          const permissionError = new FirestorePermissionError({
-            path: userDocRef.path,
-            operation: 'create',
-            requestResourceData: userProfile,
-          });
-          errorEmitter.emit('permission-error', permissionError);
-          // Re-throw the error to be caught by the outer try-catch block
-          throw permissionError;
-        });
+      if (data.role === 'owner') {
+        userProfile.verificationStatus = 'unverified';
+      }
 
+      const userDocRef = doc(firestore, 'users', user.uid);
+
+      await setDoc(userDocRef, userProfile).catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'create',
+          requestResourceData: userProfile,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        // Re-throw the error to be caught by the outer try-catch block
+        throw permissionError;
+      });
       toast({
         title: 'Account Created!',
         description: "You've been successfully signed up.",
       });
       router.push('/dashboard/profile'); // Redirect to profile to fill details
     } catch (error: any) {
-       if (!(error instanceof FirestorePermissionError)) {
-          toast({
-            variant: 'destructive',
-            title: 'Sign Up Failed',
-            description: error.message || 'An unexpected error occurred.',
-          });
-       }
+      if (!(error instanceof FirestorePermissionError)) {
+        toast({
+          variant: 'destructive',
+          title: 'Sign Up Failed',
+          description: error.message || 'An unexpected error occurred.',
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -153,7 +152,7 @@ export default function SignupPage() {
                   name="role"
                   render={({ field }) => (
                     <FormItem className="grid gap-2">
-                       <Label htmlFor="role">I am a...</Label>
+                      <Label htmlFor="role">I am a...</Label>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger id="role">

@@ -16,8 +16,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { useUser, useFirestore } from '@/firebase';
+import { collection, doc, setDoc, updateDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -27,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { MAHARASHTRA_CITIES } from '@/lib/cities';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { Separator } from '../ui/separator';
+import { OwnerVerificationForm } from '../auth/OwnerVerificationForm';
 
 const profileFormSchema = z.object({
   name: z.string().min(2, 'Name is too short.'),
@@ -45,6 +46,8 @@ const profileFormSchema = z.object({
   interests: z.string().optional(),
   preferences: z.string().optional(),
   avatarUrl: z.string().url().optional().or(z.literal('')),
+  aadharUrl: z.string().url().optional().or(z.literal('')),
+  aadharFile: z.any().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -72,6 +75,7 @@ export function ProfileForm() {
       interests: '',
       preferences: '',
       avatarUrl: '',
+      aadharUrl: '',
     },
     mode: 'onChange',
   });
@@ -91,6 +95,7 @@ export function ProfileForm() {
         interests: profile.interests || '',
         preferences: profile.preferences || '',
         avatarUrl: profile.avatarUrl || '',
+        aadharUrl: profile.aadharUrl || '',
       });
     }
   }, [profile, form]);
@@ -102,10 +107,47 @@ export function ProfileForm() {
     }
     
     setIsSubmitting(true);
-    const profileDocRef = doc(firestore, `users/${user.uid}`);
-    
-    const dataToSave = {
-        ...data,
+
+    try {
+      const profileDocRef = doc(firestore, `users/${user.uid}`);
+      
+      const dataToSave: Partial<ProfileFormValues> & { aadharUrl?: string | null; avatarUrl: string } = {
+        ...data, // spread existing form data
+      };
+
+      if (data.aadharFile && (data.aadharFile as FileList).length > 0) {
+        const aadharFile = (data.aadharFile as FileList)[0];
+
+        const uploadToImgBB = async (file: File): Promise<string> => {
+          const apiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY || 'e72d08546cf21bd22b8dfca276ba6c9e';
+          if (!apiKey) {
+            throw new Error('ImgBB API key is not configured. Please add NEXT_PUBLIC_IMGBB_API_KEY to your .env.local file.');
+          }
+          const formData = new FormData();
+          formData.append('image', file);
+          const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+            method: 'POST',
+            body: formData,
+          });
+          const result = await response.json().catch(async () => {
+            const errorText = await response.text().catch(() => 'Could not read response text.');
+            console.error('ImgBB returned a non-JSON response:', { status: response.status, body: errorText });
+            throw new Error('Image upload service returned an invalid response.');
+          });
+          if (!result.success) {
+            console.error('ImgBB API error:', result.error?.message || result);
+            throw new Error(result.error?.message || 'Failed to upload document.');
+          }
+          return result.data.url;
+        };
+
+        dataToSave.aadharUrl = await uploadToImgBB(aadharFile);
+      } else {
+        dataToSave.aadharUrl = profile?.aadharUrl || null;
+      }
+
+      // Overwrite with sanitized values
+      Object.assign(dataToSave, {
         email: data.email || null,
         age: data.age ? Number(data.age) : null,
         gender: data.gender || null,
@@ -117,9 +159,10 @@ export function ProfileForm() {
         interests: data.interests || null,
         preferences: data.preferences || null,
         avatarUrl: data.avatarUrl || `https://api.dicebear.com/8.x/initials/svg?seed=${data.name}`,
-    };
+      });
 
-    try {
+      delete (dataToSave as any).aadharFile;
+
       await setDoc(profileDocRef, dataToSave, { merge: true })
         .catch((serverError) => {
             const permissionError = new FirestorePermissionError({
@@ -140,7 +183,7 @@ export function ProfileForm() {
           toast({
             variant: 'destructive',
             title: 'An error occurred',
-            description: 'Could not save your profile. Please try again.',
+            description: (error as Error).message || 'Could not save your profile. Please try again.',
           });
        }
     } finally {
@@ -162,6 +205,10 @@ export function ProfileForm() {
             <Skeleton className="h-10 w-32" />
         </div>
     )
+  }
+
+  if (profile?.role === 'owner' && profile.verificationStatus !== 'approved') {
+    return <OwnerVerificationForm />;
   }
 
   return (
@@ -230,6 +277,32 @@ export function ProfileForm() {
         
         {!isSimpleProfile && (
           <>
+            <FormField
+              control={form.control}
+              name="aadharFile"
+              render={({ field: { value, onChange, ...fieldProps } }) => (
+                <FormItem>
+                  <FormLabel>Aadhar Card (JPG or PNG)</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...fieldProps}
+                      id="aadharFile"
+                      type="file"
+                      accept="image/png, image/jpeg"
+                      onChange={event => onChange(event.target.files)}
+                    />
+                  </FormControl>
+                  {profile?.aadharUrl && (
+                    <FormDescription>
+                      <a href={profile.aadharUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                        View current Aadhar
+                      </a>
+                    </FormDescription>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
         <Collapsible open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen}>
             <CollapsibleTrigger asChild>
                 <div className="flex flex-col items-center">

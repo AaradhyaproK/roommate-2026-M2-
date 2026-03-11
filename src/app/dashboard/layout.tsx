@@ -53,9 +53,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       { href: '/dashboard/profile', label: 'My Profile', icon: User, roles: ['student', 'owner', 'admin'] },
       { href: '/dashboard/chat', label: 'Messages', icon: MessageSquare, roles: ['student', 'owner', 'admin'] },
       { href: '/dashboard/admin', label: 'Manage Users', icon: Shield, roles: ['admin'] },
+      { href: '/dashboard/admin/owner-requests', label: 'Owner Requests', icon: Users, roles: ['admin'] },
       { href: '/dashboard/admin/earnings', label: 'Platform Earnings', icon: IndianRupee, roles: ['admin'] },
-      { href: '/dashboard/hostels', label: 'My Hostels', icon: Building, roles: ['owner'] },
-      { href: '/dashboard/payments', label: 'Payments', icon: Wallet, roles: ['owner'] },
+      { href: '/dashboard/hostels', label: 'My Hostels', icon: Building, roles: ['owner'], requiresVerification: true },
+      { href: '/dashboard/payments', label: 'Payments', icon: Wallet, roles: ['owner'], requiresVerification: true },
       { href: '/dashboard/hostels', label: 'Manage Hostels', icon: Building, roles: ['admin'] },
       { href: '/dashboard/find-hostel', label: 'Find a Hostel', icon: Search, roles: ['student'] },
       { href: '/dashboard/my-inquiries', label: 'My Inquiries', icon: FileText, roles: ['student'] },
@@ -64,11 +65,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     // Wait until loading is false and profile is available.
     if (loading || !profile?.role) return [];
     
-    if (profile.role === 'admin') {
-      return allItems.filter(item => item.roles.includes('admin'));
-    }
-    
-    return allItems.filter(item => item.roles.includes(profile.role!));
+    return allItems.filter(item => {
+      if (!item.roles.includes(profile.role!)) {
+        return false;
+      }
+      if (item.requiresVerification && profile.verificationStatus !== 'approved') {
+        return false;
+      }
+      return true;
+    });
   }, [profile, loading]);
   
 
