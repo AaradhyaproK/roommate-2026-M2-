@@ -19,8 +19,14 @@ import { useRouter } from 'next/navigation';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
+interface CompatibilityDetails {
+    score: number;
+    commonInterests: string[];
+    commonSkills: string[];
+}
+
 interface MatchResult extends UserProfile {
-    compatibilityScore: number;
+    compatibility: CompatibilityDetails;
 }
 
 export function RoommateFinder() {
@@ -36,7 +42,7 @@ export function RoommateFinder() {
     [where('role', '==', 'student')]
   );
 
-  const calculateCompatibility = (currentUserProfile: UserProfile, otherUserProfile: UserProfile): number => {
+  const calculateCompatibility = (currentUserProfile: UserProfile, otherUserProfile: UserProfile): CompatibilityDetails => {
     // Interests
     const currentUserInterests = new Set((currentUserProfile.interests || '').toLowerCase().split(',').map(i => i.trim()).filter(Boolean));
     const otherUserInterests = new Set((otherUserProfile.interests || '').toLowerCase().split(',').map(i => i.trim()).filter(Boolean));
@@ -68,12 +74,16 @@ export function RoommateFinder() {
             totalCommonItems += 1;
         }
     }
-
-    if (totalPossibleMatches === 0) return 0;
+    
+    if (totalPossibleMatches === 0) return { score: 0, commonInterests: [], commonSkills: [] };
     
     const score = Math.round((totalCommonItems / totalPossibleMatches) * 100);
 
-    return Math.min(score, 100); // Cap at 100
+    return {
+        score: Math.min(score, 100), // Cap at 100
+        commonInterests,
+        commonSkills
+    };
   };
 
   const handleMatch = async () => {
@@ -112,10 +122,10 @@ export function RoommateFinder() {
         
         const scoredResults: MatchResult[] = cityRoommates.map(p => ({
             ...p,
-            compatibilityScore: calculateCompatibility(profile, p)
+            compatibility: calculateCompatibility(profile, p)
         }));
 
-        scoredResults.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
+        scoredResults.sort((a, b) => b.compatibility.score - a.compatibility.score);
 
         setResults(scoredResults);
         toast({
@@ -231,69 +241,80 @@ export function RoommateFinder() {
                     </span>
                 </div>
             </div>
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
                 {results.map((student) => (
-                    <Card key={student.id} className="animate-in fade-in-50 flex flex-col">
-                    <CardHeader className="flex flex-row items-start gap-4">
-                        <Avatar className="h-16 w-16 border-2 border-primary">
-                            <AvatarImage src={student.avatarUrl} alt={student.name}/>
-                            <AvatarFallback>{student.name?.[0].toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <div className='w-full'>
-                            <h3 className="font-bold text-xl text-foreground font-headline">{student.name}</h3>
-                            <p className="text-sm text-muted-foreground capitalize">{student.occupation} | {student.age} years | {student.gender}</p>
+                    <Card key={student.id} className="relative flex flex-col overflow-hidden rounded-2xl border-border/50 shadow-lg transition-all hover:shadow-2xl hover:-translate-y-1 animate-in fade-in-50">
+                        {/* Header background */}
+                        <div className="h-24 bg-gradient-to-br from-primary/20 to-accent/20" />
+
+                        {/* Content */}
+                        <div className="flex flex-1 flex-col items-center p-6 pt-0">
+                            {/* Avatar */}
+                            <Avatar className="relative -mt-12 h-24 w-24 border-4 border-background shadow-md">
+                                <AvatarImage src={student.avatarUrl} alt={student.name} />
+                                <AvatarFallback className="text-3xl">{student.name?.[0].toUpperCase()}</AvatarFallback>
+                            </Avatar>
+
+                            {/* Name and Basic Info */}
+                            <div className="mt-4 text-center">
+                                <h3 className="text-2xl font-bold text-foreground font-headline">{student.name}</h3>
+                                <p className="text-sm text-muted-foreground capitalize">{student.occupation} &bull; {student.age} years &bull; {student.gender}</p>
+                            </div>
+
+                            {/* Education */}
                             {(student.collegeName || student.fieldOfStudy) && (
-                                <div className="flex items-center text-sm text-muted-foreground mt-1">
+                                <div className="mt-2 flex items-center text-sm text-muted-foreground">
                                     <GraduationCap className="mr-2 h-4 w-4 flex-shrink-0" />
-                                    <span className="truncate">
+                                    <span className="truncate text-center">
                                         {student.collegeName}{student.collegeName && student.fieldOfStudy && ', '}{student.fieldOfStudy}
                                     </span>
                                 </div>
                             )}
-                           
-                            <Button variant="outline" size="sm" onClick={() => handleStartChat(student)} className="mt-2">
+
+                            {/* Match Score */}
+                            <div className="w-full space-y-1 mt-6">
+                                <div className='flex justify-between items-center text-sm'>
+                                    <h4 className="font-semibold text-foreground">Match Score</h4>
+                                    <span className='font-bold text-primary'>{student.compatibility.score}%</span>
+                                </div>
+                                <Progress value={student.compatibility.score} className="h-2" />
+                            </div>
+
+                            <Separator className="my-6" />
+
+                            {/* Interests & Skills */}
+                            <div className="w-full flex-1 space-y-4 text-left">
+                                {student.compatibility.commonInterests.length > 0 && (
+                                    <div>
+                                        <h4 className="font-semibold text-foreground mb-2 text-sm">Common Interests</h4>
+                                        <div className="flex flex-wrap gap-2">
+                                            {student.compatibility.commonInterests.map(interest => (
+                                                <Badge key={interest} variant="secondary" className="capitalize bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">{interest.trim()}</Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {student.compatibility.commonSkills.length > 0 && (
+                                    <div>
+                                        <h4 className="font-semibold text-foreground mb-2 text-sm">Common Skills</h4>
+                                        <div className="flex flex-wrap gap-2">
+                                            {student.compatibility.commonSkills.map(skill => (
+                                                <Badge key={skill} variant="outline" className="capitalize border-blue-300 text-blue-800 dark:border-blue-700 dark:text-blue-300">{skill.trim()}</Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {student.compatibility.commonInterests.length === 0 && student.compatibility.commonSkills.length === 0 && (
+                                    <p className="text-sm text-muted-foreground text-center py-2">No common interests or skills found. Add more to your profile!</p>
+                                )}
+                            </div>
+
+                            {/* Action Button */}
+                            <Button variant="default" size="lg" onClick={() => handleStartChat(student)} className="mt-8 w-full bg-accent text-accent-foreground hover:bg-accent/90">
                                 <MessageSquare className="mr-2 h-4 w-4"/>
-                                Message
+                                Message {student.name.split(' ')[0]}
                             </Button>
                         </div>
-                    </CardHeader>
-                    
-                    <CardContent className="space-y-4 flex-grow">
-                         <div>
-                            <div className='flex justify-between items-center mb-1'>
-                                <h4 className="font-semibold text-foreground text-sm">Match Score</h4>
-                                <span className='font-bold text-primary text-sm'>{student.compatibilityScore}%</span>
-                            </div>
-                            <Progress value={student.compatibilityScore} className="h-2" />
-                        </div>
-                        <Separator />
-                        {(student.interests || student.skills) ? (
-                            <div className='space-y-4'>
-                            {student.interests && (
-                                <div>
-                                    <h4 className="font-semibold text-foreground mb-2 text-sm">Interests</h4>
-                                    <div className="flex flex-wrap gap-2">
-                                        {student.interests.split(',').map(interest => (
-                                            <Badge key={interest} variant="secondary" className="capitalize">{interest.trim()}</Badge>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            {student.skills && (
-                                <div>
-                                    <h4 className="font-semibold text-foreground mb-2 text-sm">Skills</h4>
-                                    <div className="flex flex-wrap gap-2">
-                                        {student.skills.split(',').map(skill => (
-                                            <Badge key={skill} variant="outline" className="capitalize">{skill.trim()}</Badge>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            </div>
-                        ) : (
-                            <p className="text-sm text-muted-foreground text-center py-4">This user has not filled out their interests or skills yet.</p>
-                        )}
-                    </CardContent>
                     </Card>
                 ))}
             </div>

@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function FindRoommatePage() {
     return (
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto max-w-6xl">
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline">Find Your Perfect Roommate</CardTitle>
