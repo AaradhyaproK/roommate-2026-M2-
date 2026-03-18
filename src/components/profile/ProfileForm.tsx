@@ -48,6 +48,19 @@ const profileFormSchema = z.object({
   avatarUrl: z.string().url().optional().or(z.literal('')),
   aadharUrl: z.string().url().optional().or(z.literal('')),
   aadharFile: z.any().optional(),
+  // New fields for students/candidates
+  collegeName: z.string().min(2, 'College name is too short.').optional().or(z.literal('')),
+  degree: z.string().min(2, 'Degree is too short.').optional().or(z.literal('')),
+  fieldOfStudy: z.string().min(2, 'Field of study is too short.').optional().or(z.literal('')),
+  graduationYear: z.coerce.number().int().min(1950, 'Invalid year.').max(new Date().getFullYear() + 10, 'Invalid year.').optional().or(z.literal('')),
+
+  // New fields for hostel owners
+  ownerBio: z.string().max(500, 'Bio must be 500 characters or less.').optional().or(z.literal('')),
+  yearsInManagement: z.coerce.number().int().min(0, 'Experience cannot be negative.').optional().or(z.literal('')),
+  managementName: z.string().min(2, 'Name is too short.').optional().or(z.literal('')),
+  websiteUrl: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
+  numberOfProperties: z.coerce.number().int().min(0, 'Cannot be negative.').optional().or(z.literal('')),
+
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -76,6 +89,15 @@ export function ProfileForm() {
       preferences: '',
       avatarUrl: '',
       aadharUrl: '',
+      collegeName: '',
+      degree: '',
+      fieldOfStudy: '',
+      graduationYear: undefined,
+      ownerBio: '',
+      yearsInManagement: undefined,
+      managementName: '',
+      websiteUrl: '',
+      numberOfProperties: undefined,
     },
     mode: 'onChange',
   });
@@ -96,9 +118,18 @@ export function ProfileForm() {
         preferences: profile.preferences || '',
         avatarUrl: profile.avatarUrl || '',
         aadharUrl: profile.aadharUrl || '',
+        collegeName: profile.collegeName || '',
+        degree: profile.degree || '',
+        fieldOfStudy: profile.fieldOfStudy || '',
+        graduationYear: profile.graduationYear || undefined,
+        ownerBio: profile.ownerBio || '',
+        yearsInManagement: profile.yearsInManagement || undefined,
+        managementName: profile.managementName || '',
+        websiteUrl: profile.websiteUrl || '',
+        numberOfProperties: profile.numberOfProperties || undefined,
       });
     }
-  }, [profile, form]);
+  }, [profile, form, user?.email]);
 
   async function onSubmit(data: ProfileFormValues) {
     if (!user || !firestore) {
@@ -159,6 +190,15 @@ export function ProfileForm() {
         interests: data.interests || null,
         preferences: data.preferences || null,
         avatarUrl: data.avatarUrl || `https://api.dicebear.com/8.x/initials/svg?seed=${data.name}`,
+        collegeName: data.collegeName || null,
+        degree: data.degree || null,
+        fieldOfStudy: data.fieldOfStudy || null,
+        graduationYear: data.graduationYear ? Number(data.graduationYear) : null,
+        ownerBio: data.ownerBio || null,
+        yearsInManagement: data.yearsInManagement ? Number(data.yearsInManagement) : null,
+        managementName: data.managementName || null,
+        websiteUrl: data.websiteUrl || null,
+        numberOfProperties: data.numberOfProperties ? Number(data.numberOfProperties) : null,
       });
 
       delete (dataToSave as any).aadharFile;
@@ -274,6 +314,94 @@ export function ProfileForm() {
                 </FormItem>
             )}
         />
+
+        {isSimpleProfile && (
+          <>
+            <Separator />
+            <div className="space-y-2">
+                <h3 className="text-lg font-medium">Hostel Owner Information</h3>
+                <p className="text-sm text-muted-foreground">
+                    Provide more details about yourself as a hostel owner. This helps build trust with students.
+                </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                <FormField
+                    control={form.control}
+                    name="managementName"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Business/Management Name</FormLabel>
+                            <FormControl>
+                                <Input placeholder="e.g., SK Hostels" {...field} value={field.value ?? ''} />
+                            </FormControl>
+                            <FormDescription>Your registered business or management name, if any.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="websiteUrl"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Website (Optional)</FormLabel>
+                            <FormControl>
+                                <Input placeholder="https://example.com" {...field} value={field.value ?? ''} />
+                            </FormControl>
+                            <FormDescription>A link to your personal or business website.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                <FormField
+                    control={form.control}
+                    name="yearsInManagement"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Years in Property Management</FormLabel>
+                            <FormControl>
+                                <Input type="number" placeholder="e.g., 5" {...field} value={field.value ?? ''} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="numberOfProperties"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Number of Properties</FormLabel>
+                            <FormControl>
+                                <Input type="number" placeholder="e.g., 3" {...field} value={field.value ?? ''} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
+            <FormField
+                control={form.control}
+                name="ownerBio"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>About You (as a Hostel Owner)</FormLabel>
+                        <FormControl>
+                            <Textarea
+                                placeholder="Tell students about your experience, management style, and what makes your properties a great place to live..."
+                                className="resize-y"
+                                {...field}
+                                value={field.value ?? ''}
+                            />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+          </>
+        )}
         
         {!isSimpleProfile && (
           <>
@@ -404,6 +532,72 @@ export function ProfileForm() {
             </FormItem>
           )}
         />
+
+        <Separator />
+        <div className="space-y-2 pt-4">
+            <h3 className="text-lg font-medium">Education</h3>
+            <p className="text-sm text-muted-foreground">
+                Tell us about your educational background.
+            </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            <FormField
+                control={form.control}
+                name="collegeName"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>College/University</FormLabel>
+                        <FormControl>
+                            <Input placeholder="e.g., University of Pune" {...field} value={field.value ?? ''} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="graduationYear"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Graduation Year</FormLabel>
+                        <FormControl>
+                            <Input type="number" placeholder="e.g., 2026" {...field} value={field.value ?? ''} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            <FormField
+                control={form.control}
+                name="degree"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Degree</FormLabel>
+                        <FormControl>
+                            <Input placeholder="e.g., Bachelor of Engineering" {...field} value={field.value ?? ''} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="fieldOfStudy"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Field of Study</FormLabel>
+                        <FormControl>
+                            <Input placeholder="e.g., Computer Science" {...field} value={field.value ?? ''} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+        </div>
+        <Separator className="!mt-8" />
+
         <FormField
           control={form.control}
           name="skills"

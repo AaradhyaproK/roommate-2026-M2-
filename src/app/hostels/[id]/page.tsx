@@ -2,7 +2,7 @@
 'use client';
 import Image from 'next/image';
 import { notFound, useParams, useRouter } from 'next/navigation';
-import { MapPin, IndianRupee, BedDouble, Star, Users, Clock, Home, ExternalLink, Info, ClipboardList, ArrowLeft } from 'lucide-react';
+import { MapPin, IndianRupee, Star, Users, Clock, ExternalLink, Info, ClipboardList, ArrowLeft, Landmark, Phone, User } from 'lucide-react';
 import React from 'react';
 
 import { Header } from '@/components/layout/Header';
@@ -105,6 +105,12 @@ export default function HostelDetailPage() {
                     <MapPin className="mr-1 h-4 w-4" />
                     <span>{hostel.location}</span>
                 </div>
+                {hostel.landmark && (
+                    <div className="flex items-center justify-center md:justify-start text-muted-foreground gap-x-2 gap-y-1 mt-1">
+                        <Landmark className="mr-1 h-4 w-4 text-primary" />
+                        <span className="font-semibold">{hostel.landmark}</span>
+                    </div>
+                )}
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-6 gap-y-2 mt-2">
                    <div className="flex items-center font-semibold" title="Price">
                         <IndianRupee className="mr-1.5 h-4 w-4 text-primary" />
@@ -169,6 +175,31 @@ export default function HostelDetailPage() {
           
           <Separator />
           
+          {(hostel.contactName || hostel.contactNumber) && (
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <Phone className="h-6 w-6 text-primary" />
+                <h2 className="text-xl font-bold font-headline">Contact Information</h2>
+              </div>
+              <div className="bg-background border p-4 rounded-xl space-y-3">
+                {hostel.contactName && (
+                  <div className="flex items-center">
+                    <User className="mr-3 h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{hostel.contactName}</span>
+                  </div>
+                )}
+                {hostel.contactNumber && (
+                  <div className="flex items-center">
+                    <Phone className="mr-3 h-4 w-4 text-muted-foreground" />
+                    <a href={`tel:${hostel.contactNumber}`} className="text-primary hover:underline">{hostel.contactNumber}</a>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <Separator />
+
           {/* Image Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 sm:gap-2">
             {hostel.imageUrls?.map((url, index) => (

@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Users, MessageSquare } from 'lucide-react';
+import { Loader2, Users, MessageSquare, GraduationCap } from 'lucide-react';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Terminal } from 'lucide-react';
@@ -37,22 +37,38 @@ export function RoommateFinder() {
   );
 
   const calculateCompatibility = (currentUserProfile: UserProfile, otherUserProfile: UserProfile): number => {
-    if (!currentUserProfile.interests && !currentUserProfile.skills) return 0;
-
+    // Interests
     const currentUserInterests = new Set((currentUserProfile.interests || '').toLowerCase().split(',').map(i => i.trim()).filter(Boolean));
     const otherUserInterests = new Set((otherUserProfile.interests || '').toLowerCase().split(',').map(i => i.trim()).filter(Boolean));
+    const commonInterests = [...currentUserInterests].filter(interest => otherUserInterests.has(interest));
 
+    // Skills
     const currentUserSkills = new Set((currentUserProfile.skills || '').toLowerCase().split(',').map(s => s.trim()).filter(Boolean));
     const otherUserSkills = new Set((otherUserProfile.skills || '').toLowerCase().split(',').map(s => s.trim()).filter(Boolean));
-
-    if (currentUserInterests.size === 0 && currentUserSkills.size === 0) return 0;
-
-    const commonInterests = [...currentUserInterests].filter(interest => otherUserInterests.has(interest));
     const commonSkills = [...currentUserSkills].filter(skill => otherUserSkills.has(skill));
 
-    const totalPossibleMatches = currentUserInterests.size + currentUserSkills.size;
-    const totalCommonItems = commonInterests.length + commonSkills.length;
+    let totalPossibleMatches = currentUserInterests.size + currentUserSkills.size;
+    let totalCommonItems = commonInterests.length + commonSkills.length;
     
+    // Education - weighted by treating them as individual important items
+    const currentUserCollege = (currentUserProfile.collegeName || '').trim().toLowerCase();
+    if (currentUserCollege) {
+        totalPossibleMatches += 1;
+        const otherUserCollege = (otherUserProfile.collegeName || '').trim().toLowerCase();
+        if (currentUserCollege === otherUserCollege) {
+            totalCommonItems += 1;
+        }
+    }
+
+    const currentUserFieldOfStudy = (currentUserProfile.fieldOfStudy || '').trim().toLowerCase();
+    if (currentUserFieldOfStudy) {
+        totalPossibleMatches += 1;
+        const otherUserFieldOfStudy = (otherUserProfile.fieldOfStudy || '').trim().toLowerCase();
+        if (currentUserFieldOfStudy === otherUserFieldOfStudy) {
+            totalCommonItems += 1;
+        }
+    }
+
     if (totalPossibleMatches === 0) return 0;
     
     const score = Math.round((totalCommonItems / totalPossibleMatches) * 100);
@@ -172,7 +188,7 @@ export function RoommateFinder() {
   }
 
 
-  const isProfileIncomplete = !profile?.city || !profile?.gender || !profile.interests || !profile.skills || !profile.preferredCity;
+  const isProfileIncomplete = !profile?.city || !profile?.gender || !profile.interests || !profile.skills || !profile.preferredCity || !profile.collegeName;
 
   return (
     <div className="space-y-6">
@@ -182,7 +198,7 @@ export function RoommateFinder() {
           <Terminal className="h-4 w-4" />
           <AlertTitle>Your Profile is Incomplete!</AlertTitle>
           <AlertDescription>
-            Our matching algorithm needs to know your location, preferred city, gender, interests and skills. Please <Link href="/dashboard/profile" className="font-bold underline text-primary">update your profile</Link> to find the best matches.
+            Our matching algorithm works best with your location, preferred city, gender, education, interests, and skills. Please <Link href="/dashboard/profile" className="font-bold underline text-primary">update your profile</Link> to find the best matches.
           </AlertDescription>
         </Alert>
       )}
@@ -226,6 +242,14 @@ export function RoommateFinder() {
                         <div className='w-full'>
                             <h3 className="font-bold text-xl text-foreground font-headline">{student.name}</h3>
                             <p className="text-sm text-muted-foreground capitalize">{student.occupation} | {student.age} years | {student.gender}</p>
+                            {(student.collegeName || student.fieldOfStudy) && (
+                                <div className="flex items-center text-sm text-muted-foreground mt-1">
+                                    <GraduationCap className="mr-2 h-4 w-4 flex-shrink-0" />
+                                    <span className="truncate">
+                                        {student.collegeName}{student.collegeName && student.fieldOfStudy && ', '}{student.fieldOfStudy}
+                                    </span>
+                                </div>
+                            )}
                            
                             <Button variant="outline" size="sm" onClick={() => handleStartChat(student)} className="mt-2">
                                 <MessageSquare className="mr-2 h-4 w-4"/>

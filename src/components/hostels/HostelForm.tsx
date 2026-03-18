@@ -39,6 +39,7 @@ const hostelFormSchema = z.object({
   location: z.string().min(1, {
     message: 'Please select a city.',
   }),
+  landmark: z.string().optional(),
   googleMapUrl: z.string().url({ message: 'Please enter a valid Google Maps URL.' }).optional().or(z.literal('')),
   description: z.string().min(20, {
     message: 'Description must be at least 20 characters.',
@@ -54,6 +55,8 @@ const hostelFormSchema = z.object({
   hostelFor: z.enum(['girls', 'boys', 'both'], {
     required_error: 'Please specify who this hostel is for.',
   }),
+  contactName: z.string().min(2, 'Contact name is too short').optional().or(z.literal('')),
+  contactNumber: z.string().regex(/^\d{10}$/, "Contact number must be exactly 10 digits.").optional().or(z.literal('')),
   checkInTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Please use HH:MM format."),
   checkOutTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Please use HH:MM format."),
   rating: z.coerce.number().min(0).max(5).optional(),
@@ -81,6 +84,7 @@ export function HostelForm({ hostel }: HostelFormProps) {
   const defaultValues: Partial<HostelFormValues> = {
     name: hostel?.name || '',
     location: hostel?.location || '',
+    landmark: hostel?.landmark || '',
     description: hostel?.description || '',
     amenities: hostel?.amenities.join(', ') || 'WiFi, Kitchen, ',
     price: hostel?.price || 1000,
@@ -88,6 +92,8 @@ export function HostelForm({ hostel }: HostelFormProps) {
     deposit: hostel?.deposit || 0,
     rules: hostel?.rules || '',
     hostelFor: hostel?.hostelFor || 'both',
+    contactName: hostel?.contactName || '',
+    contactNumber: hostel?.contactNumber || '',
     checkInTime: hostel?.checkInTime || '14:00',
     checkOutTime: hostel?.checkOutTime || '11:00',
     rating: hostel?.rating || 4.5,
@@ -179,6 +185,9 @@ export function HostelForm({ hostel }: HostelFormProps) {
         rating: isEditMode ? data.rating : 4.5,
         reviewsCount: isEditMode ? data.reviewsCount : Math.floor(Math.random() * 50) + 5,
         isHidden: isEditMode ? hostel.isHidden : false,
+        landmark: data.landmark || null,
+        contactName: data.contactName || null,
+        contactNumber: data.contactNumber || null,
       };
 
       if (isEditMode && hostel.id) {
@@ -298,6 +307,22 @@ export function HostelForm({ hostel }: HostelFormProps) {
         />
         <FormField
           control={form.control}
+          name="landmark"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Landmark (Optional)</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., Near K. K. Wagh College" {...field} value={field.value ?? ''} />
+              </FormControl>
+              <FormDescription>
+                A nearby landmark to help students find your hostel.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
           name="googleMapUrl"
           render={({ field }) => (
             <FormItem>
@@ -370,6 +395,36 @@ export function HostelForm({ hostel }: HostelFormProps) {
             </FormItem>
           )}
         />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            <FormField
+                control={form.control}
+                name="contactName"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Contact Person Name</FormLabel>
+                    <FormControl>
+                        <Input placeholder="e.g., Mr. Patil" {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormDescription>Public contact name for the hostel.</FormDescription>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+             <FormField
+                control={form.control}
+                name="contactNumber"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Contact Number</FormLabel>
+                    <FormControl>
+                        <Input placeholder="10-digit mobile number" {...field} value={field.value ?? ''} />
+                    </FormControl>
+                     <FormDescription>Public contact number for the hostel.</FormDescription>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
             <FormField
                 control={form.control}

@@ -1,7 +1,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { MapPin, Wifi, DollarSign, Users, EyeOff } from 'lucide-react';
+import { MapPin, Landmark, EyeOff } from 'lucide-react';
 import type { Hostel } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -47,9 +47,17 @@ export function HostelCard({ hostel }: HostelCardProps) {
           </div>
         </CardHeader>
         <CardContent className="flex-grow grid gap-3 px-4 pb-4">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
-            <span>{hostel.location}</span>
+          <div>
+            <div className="flex items-center text-sm text-muted-foreground">
+              <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
+              <span>{hostel.location}</span>
+            </div>
+            {hostel.landmark && (
+              <div className="flex items-center text-sm text-muted-foreground pt-1">
+                <Landmark className="mr-2 h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{hostel.landmark}</span>
+              </div>
+            )}
           </div>
           <p className="text-sm text-muted-foreground line-clamp-2">{hostel.description}</p>
            <div className="flex flex-wrap gap-2 pt-2">
