@@ -8,7 +8,6 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { HostelCard } from '@/components/hostels/HostelCard';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useCollection } from '@/firebase';
 import type { Hostel } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,7 +16,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useMemo } from 'react';
 
 export default function HomePage() {
-  const heroImage = PlaceHolderImages.find((img) => img.id === 'hero');
   const { data: allHostels, loading } = useCollection<Hostel>('hostels', []);
 
   const featuredHostels = useMemo(() => {
@@ -66,17 +64,14 @@ export default function HomePage() {
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative w-full py-24 md:py-32 lg:py-48">
-          {heroImage && (
-            <Image
-              alt="Background"
-              className="absolute inset-0 object-cover w-full h-full"
-              data-ai-hint={heroImage.imageHint}
-              fill
-              priority
-              src={heroImage.imageUrl}
-            />
-          )}
-          <div className="absolute inset-0 bg-black/60" />
+          <Image
+            alt="Background"
+            className="absolute inset-0 object-cover w-full h-full"
+            fill
+            priority
+            src="https://res.cloudinary.com/dfpjyvs2k/image/upload/v1773813113/signup_2752_x_1300_px_a2atqm.png"
+          />
+          <div className="absolute inset-0 bg-black/30" />
           <div className="container relative mx-auto z-10 px-4 md:px-6">
             <div className="flex flex-col items-center space-y-6 text-center">
                 <h1 className="text-4xl font-extrabold tracking-tighter text-white sm:text-5xl md:text-6xl lg:text-7xl font-headline">
